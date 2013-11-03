@@ -7,7 +7,21 @@ var counter = 0,
 	pathTree = [];
 $('.table_detail_link:not')[0];
 
-
+$(document).delegate('[name="FileDeletionForm"]', 'submit', function() {            
+    $.ajax({
+        url     : $(this).attr('action'),
+        type    : $(this).attr('method'),
+        data    : $(this).serialize(),
+        success : function( data ) {
+                     console.log(data);
+        },
+        error   : function( xhr, err ) {
+                     alert('Error');     
+        }
+    });    
+    return false;
+});
+$('[name="FileDeletionForm"]')
 
 
 
