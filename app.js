@@ -37,7 +37,7 @@ app.get('/saveFile', function(req, res){
 
 	for(var i=0; i<reqParams.files.length; i++){
 		options.path = reqParams.files[i].path;
-		var fileName = reqParams.files[i].fileName;
+		var fileName = reqParams.files[i].name;
 
 		saveFile(options, reqParams.filesPath, fileName);
 	}
@@ -58,11 +58,11 @@ var reqParams = {
   	filesPath: '/Product Images/BraFitGuide/InTheNews',
   	files: [
 		{
-			fileName: 'size-charts.css',
+			name: 'size-charts.css',
 			path: '/gsi/static/WFS/SPXNA-Site/-/SPXNA/en_US/css/size-charts.css'
 		},
 		{
-			fileName: 'bra-fit-guide.css',
+			name: 'bra-fit-guide.css',
 			path: '/gsi/static/WFS/SPXNA-Site/-/SPXNA/en_US/css/bra-fit-guide.css'
 		}
 	]
