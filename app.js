@@ -8,10 +8,24 @@
 //POST
 app.use(express.bodyParser());
 
+//Handle errors
+app.use(function (error, req, res, next) {
+  if (!error) {
+    next();
+  } else {
+    console.error(error.stack);
+    res.send(500);
+  }
+});
+
 function saveFile(options, filePath, fileName){
 	https.get(options, function(res){
 	    var fileData = ''
 		res.setEncoding('binary');
+
+		res.on('error', function(){
+			console.log('FILED to load file: "'+ fileName +'"\nFrom path: '+ filePath);
+		});
 
 	    res.on('data', function(chunk){
 	        fileData += chunk;
@@ -23,16 +37,26 @@ function saveFile(options, filePath, fileName){
 	            console.log('File: '+ fileName +' saved!');
 	        });
 	    });
+	}).on('error', function(){
+		console.log('FILED to load file: "'+ fileName +'"\nFrom path: '+ filePath);
 	});
 }
 
 app.get('/saveFile', function(req, res){
-	var reqParams = req.query,	//Change to real req parameter
-		options = {
+	var reqParams = req.query,
+		options = {	
 			host: reqParams.host,
-  			port: reqParams.port || 80,
+			headers: {
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+				'Access-Control-Max-Age': '1000',
+				'Access-Control-Allow-Headers': 'Content-Type'
+			}
 		};
 
+	if(reqParams.port !== 'false')
+		options.port = reqParams.port;
+		
 	mkpath.sync(__dirname + reqParams.filesPath, 0700);
 
 	for(var i=0; i<reqParams.files.length; i++){
@@ -41,14 +65,13 @@ app.get('/saveFile', function(req, res){
 
 		saveFile(options, reqParams.filesPath, fileName);
 	}
-	res.writeHead(200, {
-						'Access-Control-Allow-Origin': '*',
-						'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-						'Access-Control-Max-Age': '1000',
-						'Access-Control-Allow-Headers': 'Content-Type'
-					});
-	res.end('SAVED');
-	
+	res.writeHead(200, options.headers);
+
+	res.end('SAVED');	
+});
+
+app.get('/completeLoad', function(req, res){
+	console.log('Completed loading files!');
 });
 
 /*EXAMPLE of object which should be sended to "http:localhost:911/saveFileTest"
