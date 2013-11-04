@@ -20,6 +20,7 @@ function ContentParser(){
 	this.host = document.location.hostname;
 	this.port = document.location.port.length > 0 ? document.location.port : false;
 	this.counter = 0;
+	this.getDomFromLinkCounter = 1;
 	this.parentFolder = '/'+ $('.table_detail_link:not(.wordwrap):first').text();
 	this.testData = {
 				    host: 'spxna-secdevapp02.us.gspt.net',
@@ -48,18 +49,28 @@ Class.ext(ContentParser.prototype, {
         this.startParse();
 	},
 	startParse: function(){
-		var $nextFolder = $( this.$dom.find('.table_detail_link:not(.wordwrap)')[this.counter] ),
-			nextFolderHref = $nextFolder.attr('href');
-		
-		if(this.counter == 0)
+		var $curFolder = $( this.$dom.find('.table_detail_link:not(.wordwrap)')[this.counter] ),
+			curFolderHref = $curFolder.attr('href'),
+			isExecuted = this.isExecuted($curFolder),
+			domLinkAjaxCount = isExecuted ? 2 : 1;
+
+		if(this.counter == 0 && isExecuted){
+			console.log('FIRST');
 			this.checkForAllItems();
-		else if( $nextFolder.length > 0 )
-			this.getDomFromLink(nextFolderHref);
+		}
+		if( $curFolder.length > 0 )
+			this.getDomFromLink(curFolderHref, domLinkAjaxCount, this.getDomFromLinkCallback);
 		else
 			this.sendReadyState();		
 	},
 	sendReadyState: function(){
 		//$.get('http:/localhost:911/completeLoad');
+	},
+	isExecuted: function($el){
+		var $treeImg = $el.closest('.treeIconTable').find('.treeIcon img'),
+			imgSrc = $treeImg.attr('src');
+
+		return /minus/.test(imgSrc) && $treeImg.length > 0 ? true : false;
 	},
 	checkForAllItems: function(){
 		if(this.$dom.find('.pagecursorbtn[value="Next"]'))
@@ -73,7 +84,6 @@ Class.ext(ContentParser.prototype, {
 			files = this.getFilesData();
 
 		if($selectedDirectoryInput.length > 0){
-			console.log('selected dir LENGTH');
 			path = this.parentFolder +'/'+ $selectedDirectoryInput.val();			
 		}
 		
@@ -83,29 +93,40 @@ Class.ext(ContentParser.prototype, {
 
 		files.length > 0 ? this.sendDataForSave(path, files) : this.startParse();
 	},
-	getDomFromLink: function(url){
+	getDomFromLink: function(url, domLinkAjaxCount, callBack){
 		var obj = this;
 
 		$.ajax({
-			type: 'GET',
-			url: url,
+			type : 'GET',
+			url : url,
 			success: function(data){
 				obj.$dom = $(data);
-				obj.checkForAllItems();
-				//console.log('DOM loaded from "Link"');
+				if(callBack)
+					callBack.call(obj, url, domLinkAjaxCount);
 			},
 			error: function(){
-				console.log('DOM loaded from "Link" - ERROR');
+				console.log('Filed to load DOM from "Link"');
 			}
 		});
+	},
+	getDomFromLinkCallback: function(url, domLinkAjaxCount){
+		if(domLinkAjaxCount && this.getDomFromLinkCounter < domLinkAjaxCount){
+			console.log('TWICE');
+			this.getDomFromLinkCounter += 1;
+			this.getDomFromLink(url, domLinkAjaxCount, this.getDomFromLinkCallback);					
+		}
+		else{
+			this.getDomFromLinkCounter = 1;
+			this.checkForAllItems();
+		}
 	},
 	storeDomShowAll: function($form){
 		var obj = this;
 
 		$.ajax({
-	        url     : $form.attr('action'),
-	        type    : $form.attr('method'),
-	        data    : $form.serialize() +'&PageSize_-1=Show%20All' ,
+	        url : $form.attr('action'),
+	        type : $form.attr('method'),
+	        data : $form.serialize() +'&PageSize_-1=Show%20All' ,
 	        success : function(data) {
 	        	obj.$dom = $(data);
 
@@ -133,7 +154,7 @@ Class.ext(ContentParser.prototype, {
 	},
 	sendDataForSave: function(curFilePath, filesData){
 		var obj = this;
-
+		console.log('SEND');
 		$.ajax({
 			type: 'GET',
 			url: 'http:/localhost:911/saveFile',
