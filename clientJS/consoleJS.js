@@ -15,13 +15,6 @@ var Class = {
 			targetClass[key] = sourse[key];			
 	}
 };
-//Jquery outerHTML method
-jQuery.fn.outerHTML = function(s) {
-    return s
-        ? this.before(s).remove()
-        : jQuery("<p>").append(this.eq(0).clone()).html();
-};
-
 //Main class for *Content Parser*
 function ContentParser(){
 	this.host = document.location.hostname;
@@ -66,7 +59,7 @@ Class.ext(ContentParser.prototype, {
 			this.sendReadyState();		
 	},
 	sendReadyState: function(){
-		$.get('http:/localhost:911/completeLoad');
+		//$.get('http:/localhost:911/completeLoad');
 	},
 	checkForAllItems: function(){
 		if(this.$dom.find('.pagecursorbtn[value="Next"]'))

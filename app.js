@@ -8,6 +8,9 @@
 //POST
 app.use(express.bodyParser());
 
+//Increase pool size
+https.globalAgent.maxSockets = 100;
+
 //Handle errors
 app.use(function (error, req, res, next) {
   if (!error) {
@@ -24,7 +27,7 @@ function saveFile(options, filePath, fileName){
 		res.setEncoding('binary');
 
 		res.on('error', function(){
-			console.log('FILED to load file: "'+ fileName +'"\nFrom path: '+ filePath);
+			console.log('\tFILED to load file: "'+ fileName +'"\nFrom path: '+ filePath);
 		});
 
 	    res.on('data', function(chunk){
@@ -38,7 +41,7 @@ function saveFile(options, filePath, fileName){
 	        });
 	    });
 	}).on('error', function(){
-		console.log('FILED to load file: "'+ fileName +'"\nFrom path: '+ filePath);
+		console.log('\tFILED to load file: "'+ fileName +'"\nFrom path: '+ filePath);
 	});
 }
 
@@ -46,6 +49,7 @@ app.get('/saveFile', function(req, res){
 	var reqParams = req.query,
 		options = {	
 			host: reqParams.host,
+			agent : false,
 			headers: {
 				'Access-Control-Allow-Origin': '*',
 				'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
@@ -70,9 +74,9 @@ app.get('/saveFile', function(req, res){
 	res.end('SAVED');	
 });
 
-app.get('/completeLoad', function(req, res){
-	console.log('Completed loading files!');
-});
+// app.get('/completeLoad', function(req, res){
+// 	console.log('Completed loading files!');
+// });
 
 /*EXAMPLE of object which should be sended to "http:localhost:911/saveFileTest"
 var reqParams = {
