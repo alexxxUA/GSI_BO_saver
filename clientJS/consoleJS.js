@@ -139,6 +139,7 @@ Class.ext(ContentParser.prototype, {
 			url: 'http:/localhost:911/saveFile',
 			data:{	
 				host: obj.host,
+				port: obj.port,
 			  	filesPath: curFilePath,
 			  	files: filesData
 			},

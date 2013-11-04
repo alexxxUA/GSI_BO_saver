@@ -27,7 +27,8 @@ function saveFile(options, filePath, fileName){
 		res.setEncoding('binary');
 
 		res.on('error', function(){
-			console.log('\tFILED to load file: "'+ fileName +'"\nFrom path: '+ filePath);
+			console.log('----------------------------------------\n \
+				FILED to load file: "'+ fileName +'" From path: '+ filePath);
 		});
 
 	    res.on('data', function(chunk){
@@ -41,7 +42,8 @@ function saveFile(options, filePath, fileName){
 	        });
 	    });
 	}).on('error', function(){
-		console.log('\tFILED to load file: "'+ fileName +'"\nFrom path: '+ filePath);
+		console.log('----------------------------------------\n \
+			FILED to load file: "'+ fileName +'" From path: '+ filePath);
 	});
 }
 
