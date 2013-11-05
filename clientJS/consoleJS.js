@@ -87,7 +87,7 @@ Class.ext(ContentParser.prototype, {
 			path = this.parentFolder +'/'+ $selectedDirectoryInput.val();
 		
 		if(files.length > 0){
-			console.log('%cPath: "'+ path +'" - in progress...', 'color: #40BFF0; font-size: 13px;');
+			console.log('%c'+ files.length +' files from Path: "'+ path +'" - started downloading...', 'color: #40BFF0; font-size: 13px;');
 			this.sendDataForSave(path, files, this.startParse )
 		}
 		else
@@ -149,6 +149,7 @@ Class.ext(ContentParser.prototype, {
 		return filesData;
 	},
 	sendDataForSave: function(curFilePath, filesData, callBack){
+		this.filesLength += filesData.length;
 		var obj = this,
 			nextDir = this.getDirParam(this.counter + 1),
 			data = {	
@@ -156,6 +157,7 @@ Class.ext(ContentParser.prototype, {
 					port: obj.port,
 				  	filesPath: curFilePath,
 				  	files: filesData,
+				  	filesLength: this.filesLength,
 				  	isLastChunk: nextDir.isExist ? false : true
 			};
 
