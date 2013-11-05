@@ -19,24 +19,10 @@ var Class = {
 function ContentParser(){
 	this.host = document.location.hostname;
 	this.port = document.location.port.length > 0 ? document.location.port : false;
-	this.counter = 0;
+	this.counter = -1;
 	this.getDomFromLinkCounter = 1;
 	this.parentFolder = '/'+ $('.table_detail_link:not(.wordwrap):first').text();
-	this.testData = {
-				    host: 'spxna-secdevapp02.us.gspt.net',
-				  	port: 1444,
-				  	filesPath: '/Product Images/BraFitGuideInTheNews',
-				  	files: [
-						{
-							name: 'size-charts.css',
-							path: '/gsi/static/WFS/SPXNA-Site/-/SPXNA/en_US/css/size-charts.css'
-						},
-						{
-							name: 'bra-fit-guide.css',
-							path: '/gsi/static/WFS/SPXNA-Site/-/SPXNA/en_US/css/bra-fit-guide.css'
-						}
-					]
-				};
+	
 	this.init();
 };
 
@@ -48,33 +34,47 @@ Class.ext(ContentParser.prototype, {
         
         this.startParse();
 	},
-	startParse: function(){
-		var $curFolder = $( this.$dom.find('.table_detail_link:not(.wordwrap)')[this.counter] ),
-			curFolderHref = $curFolder.attr('href'),
-			isExecuted = this.isExecuted($curFolder),
-			domLinkAjaxCount = isExecuted ? 2 : 1;
+	startParse: function(isLast){
+		this.counter += 1;
+		var curFolder = this.getDirParam(this.counter);
 
-		if(this.counter == 0 && isExecuted){
-			console.log('FIRST');
-			this.checkForAllItems();
-		}
-		if( $curFolder.length > 0 )
-			this.getDomFromLink(curFolderHref, domLinkAjaxCount, this.getDomFromLinkCallback);
-		else
-			this.sendReadyState();		
+		if( curFolder.isExist )
+			this.getDomFromLink(curFolder.href, this.getDomFromLinkCallback, curFolder.isExecuted);
+		else if(isLast)
+			this.sendReadyState();
+	},
+	getDirParam: function(index){
+		var $curFolder = $( this.$dom.find('.table_detail_link:not(.wordwrap)')[index] );
+
+		return {
+			$item: $curFolder,
+			href: $curFolder.attr('href'),
+			isExist: $curFolder.length > 0 ? true : false,
+			isExecuted: this.isExecuted($curFolder)
+		};
 	},
 	sendReadyState: function(){
-		//$.get('http:/localhost:911/completeLoad');
+		var obj = this;
+		$.ajax({
+			type: 'GET',
+			url: 'http:/localhost:911/completeLoad',
+			success: function(errorData){
+				if(!errorData)
+					console.log('All files were downloaded successfully!');				
+				else
+					obj.consoleErrorFiles(errorData);			
+			}
+		});
 	},
 	isExecuted: function($el){
 		var $treeImg = $el.closest('.treeIconTable').find('.treeIcon img'),
 			imgSrc = $treeImg.attr('src');
 
-		return /minus/.test(imgSrc) && $treeImg.length > 0 ? true : false;
+		return /minus/.test(imgSrc) ? true : false;
 	},
 	checkForAllItems: function(){
 		if(this.$dom.find('.pagecursorbtn[value="Next"]'))
-			this.storeDomShowAll( this.$dom.find('[name="FileDeletionForm"]') );
+			this.storeDomShowAll( this.$dom.find('[name="FileDeletionForm"]'), this.getVariablesFromDomAndRunAjax );
 		else
 			this.getVariablesFromDomAndRunAjax();
 	},
@@ -83,17 +83,17 @@ Class.ext(ContentParser.prototype, {
 			path = this.parentFolder,
 			files = this.getFilesData();
 
-		if($selectedDirectoryInput.length > 0){
-			path = this.parentFolder +'/'+ $selectedDirectoryInput.val();			
+		if($selectedDirectoryInput.length > 0)
+			path = this.parentFolder +'/'+ $selectedDirectoryInput.val();
+		
+		if(files.length > 0){
+			console.log('%cPath: "'+ path +'" - in progress...', 'color: #40BFF0; font-size: 13px;');
+			this.sendDataForSave(path, files, this.startParse )
 		}
-		
-		console.log('Folder'+ path +" In progress!");
-		
-		this.counter += 1; 
-
-		files.length > 0 ? this.sendDataForSave(path, files) : this.startParse();
+		else
+			this.startParse();
 	},
-	getDomFromLink: function(url, domLinkAjaxCount, callBack){
+	getDomFromLink: function(url, callBack, isExecuted){
 		var obj = this;
 
 		$.ajax({
@@ -102,25 +102,22 @@ Class.ext(ContentParser.prototype, {
 			success: function(data){
 				obj.$dom = $(data);
 				if(callBack)
-					callBack.call(obj, url, domLinkAjaxCount);
+					callBack.call(obj, url, isExecuted);
 			},
 			error: function(){
-				console.log('Filed to load DOM from "Link"');
+				console.log('%cFiled to load DOM from "Link"', 'color: #F04063; font-size: 13px;');
 			}
 		});
 	},
-	getDomFromLinkCallback: function(url, domLinkAjaxCount){
-		if(domLinkAjaxCount && this.getDomFromLinkCounter < domLinkAjaxCount){
-			console.log('TWICE');
-			this.getDomFromLinkCounter += 1;
-			this.getDomFromLink(url, domLinkAjaxCount, this.getDomFromLinkCallback);					
+	getDomFromLinkCallback: function(url, isExecuted){
+		if(isExecuted){
+			var curFolder = this.getDirParam(this.counter);
+			this.getDomFromLink(curFolder.href, this.getDomFromLinkCallback, curFolder.isExecuted);					
 		}
-		else{
-			this.getDomFromLinkCounter = 1;
+		else
 			this.checkForAllItems();
-		}
 	},
-	storeDomShowAll: function($form){
+	storeDomShowAll: function($form, callBack){
 		var obj = this;
 
 		$.ajax({
@@ -129,12 +126,11 @@ Class.ext(ContentParser.prototype, {
 	        data : $form.serialize() +'&PageSize_-1=Show%20All' ,
 	        success : function(data) {
 	        	obj.$dom = $(data);
-
-	        	//console.log('"Show all" DOM loaded');
-	        	obj.getVariablesFromDomAndRunAjax();
+	        	if(callBack)
+	        		callBack.call(obj);
 	        },
 	        error   : function(xhr, err) {
-	            console.log('"Show all" DOM loaded - ERROR:(\n'+ err);     
+	            console.log('Filed to load "Show all" DOM: '+ err);     
 	        }
 	    });
 	},
@@ -152,28 +148,38 @@ Class.ext(ContentParser.prototype, {
 		});
 		return filesData;
 	},
-	sendDataForSave: function(curFilePath, filesData){
-		var obj = this;
-		console.log('SEND');
+	sendDataForSave: function(curFilePath, filesData, callBack){
+		var obj = this,
+			nextDir = this.getDirParam(this.counter + 1),
+			data = {	
+					host: obj.host,
+					port: obj.port,
+				  	filesPath: curFilePath,
+				  	files: filesData,
+				  	isLastChunk: nextDir.isExist ? false : true
+			};
+
 		$.ajax({
 			type: 'GET',
 			url: 'http:/localhost:911/saveFile',
-			data:{	
-				host: obj.host,
-				port: obj.port,
-			  	filesPath: curFilePath,
-			  	files: filesData
-			},
+			data: data,
 			success: function(){				
-				console.log('Saved');
-				obj.startParse();
+				console.log('%cFiles from path: '+ curFilePath +' downloaded!', 'color: #93EC9D; font-size: 13px');
+				if(callBack)
+					callBack.call(obj, data.isLastChunk)
 			},
 			error: function(){
-				console.log('error');
+				//console.log('%cNodejs server was crashed. Restart the server and try again.', 'color: #F04063; font-size: 13px;');
 			}
 		});
 	},
-
+	consoleErrorFiles: function(errorData){
+		console.log('Filed to load '+ errorData.length +' files because of network errors:');
+		for (var i=0; i < errorData.length; i++) {
+			console.log((i+1) +') File Name: '+ errorData[i].name +'\n   File Path: '+ errorData[i].path +'\n   File URL: '+ errorData[i].url);
+		};
+		console.log('POSSIBLE SOLUTIONS:\n\t1) Download these files manually;\n\t2) Restart download process.');
+	}
 });
 
 var contentParser = new ContentParser();
