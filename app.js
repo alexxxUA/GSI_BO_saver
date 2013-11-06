@@ -88,7 +88,7 @@ function saveFile( options, file ){
 	});
 };
 app.get('/cert', function(req, res){
-	res.write('certificate STORED!');
+	res.write('Certificate STORED!');
 	res.end();
 });
 
