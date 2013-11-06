@@ -21,11 +21,27 @@ app.use(function (error, req, res, next) {
   }
 });
 
-var errorFilesLog = [],
+var options = {
+		key: fs.readFileSync(__dirname +'\\certificates\\private-key.pem'),
+        cert: fs.readFileSync(__dirname +'\\certificates\\certificate.pem')
+	},
+	errorFilesLog = [],
 	__dirname = __dirname +'\\downloadedData',
 	elementsToDownload = 0,
-	downloadedElements = 0,
-	isAllElements = false;
+	downloadedElements = 0;
+
+function complete(){
+	if(errorFilesLog.length > 0)
+		consoleErrorFiles(errorData);
+	else
+		console.log('All "'+ downloadedElements +'" files were downloaded successfully!');
+	
+	//Resetting variables
+	errorFilesLog = [];
+	elementsToDownload = 0;
+	downloadedElements = 0;
+
+};
 
 function consoleErrorFiles(errorData){
 	console.log('Filed to load '+ errorData.length +' files because of network errors:');
@@ -52,11 +68,8 @@ function saveFile( options, file ){
 	        	
 	        	downloadedElements += 1;
 	        	
-	        	if(isAllElements && downloadedElements == elementsToDownload){
-					console.log(downloadedElements);
-					console.log(elementsToDownload);
-		    		complete();
-				}	        	
+	        	if(downloadedElements == elementsToDownload)
+		    		complete();       	
 			});
 	    });
 	}).on('error', function(){
@@ -69,15 +82,15 @@ function saveFile( options, file ){
 			name: file.name
 		}];
 		downloadedElements += 1;
-		
-		if(isAllElements && downloadedElements == elementsToDownload){
-			console.log(downloadedElements);
-			console.log(elementsToDownload);
-    		complete();
-		}
 
+		if(downloadedElements == elementsToDownload)
+    		complete();
 	});
 };
+app.get('/cert', function(req, res){
+	res.write('certificate STORED!');
+	res.end();
+});
 
 app.get('/saveFile', function(req, res){
 	var reqParams = req.query,
@@ -91,12 +104,9 @@ app.get('/saveFile', function(req, res){
 				'Access-Control-Allow-Headers': 'Content-Type'
 			}
 		};
-	if(reqParams.isLastChunk == 'true'){
-		isAllElements = true;
-		elementsToDownload = reqParams.filesLength;
-		console.log('last element');
-	}
 
+	if(reqParams.isLastChunk == 'true')
+		elementsToDownload = reqParams.filesLength;
 	
 	mkpath.sync(__dirname + reqParams.filesPath, 0700);
 
@@ -117,36 +127,8 @@ app.get('/saveFile', function(req, res){
 
 });
 
-function complete(){
-	var errorData = errorFilesLog;
-	errorFilesLog = [];
-	elementsToDownload = 0;
-	downloadedElements = 0;
-	isAllElements = false;
+https.createServer(options, app).listen(911);
 
-	if(errorData.length > 0)
-		consoleErrorFiles(errorData);
-	else
-		console.log('All files were downloaded successfully!');
-}
-
-app.get('/completeLoad', function(req, res){
-	var errorData = errorFilesLog;
-	errorFilesLog = [];
-
-	res.header('Access-Control-Allow-Origin', req.headers.origin);
-	if(errorData.length > 0){
-		consoleErrorFiles(errorData);
-		res.send(errorData);		
-	}
-	else{
-		console.log('All files were downloaded successfully!');
-		res.send();
-	}
-});
-
-
-app.listen(911);
 console.log('\nServer successfully started!\n\n \
 1) Go to page "Content upload" in GSI BO.\n \
 2) Copy a script from file "clientJS/consoleJS.js".\n \

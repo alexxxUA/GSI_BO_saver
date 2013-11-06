@@ -21,6 +21,7 @@ function ContentParser(){
 	this.port = document.location.port.length > 0 ? document.location.port : false;
 	this.counter = -1;
 	this.getDomFromLinkCounter = 1;
+	this.filesLength = 0;
 	this.parentFolder = '/'+ $('.table_detail_link:not(.wordwrap):first').text();
 	
 	this.init();
@@ -54,22 +55,11 @@ Class.ext(ContentParser.prototype, {
 		};
 	},
 	sendReadyState: function(){
-		var obj = this;
-		$.ajax({
-			type: 'GET',
-			url: 'http:/localhost:911/completeLoad',
-			success: function(errorData){
-				if(!errorData)
-					console.log('All files were downloaded successfully!');				
-				else
-					obj.consoleErrorFiles(errorData);			
-			}
-		});
+		console.log('All files were successfully sended to server for downloading!');
 	},
 	isExecuted: function($el){
 		var $treeImg = $el.closest('.treeIconTable').find('.treeIcon img'),
 			imgSrc = $treeImg.attr('src');
-
 		return /minus/.test(imgSrc) ? true : false;
 	},
 	checkForAllItems: function(){
@@ -87,7 +77,7 @@ Class.ext(ContentParser.prototype, {
 			path = this.parentFolder +'/'+ $selectedDirectoryInput.val();
 		
 		if(files.length > 0){
-			console.log('%c'+ files.length +' files from Path: "'+ path +'" - started downloading...', 'color: #40BFF0; font-size: 13px;');
+			console.log('%c'+ files.length +' files from Path: "'+ path +'" - in progress...', 'color: #40BFF0; font-size: 13px;');
 			this.sendDataForSave(path, files, this.startParse )
 		}
 		else
@@ -160,13 +150,12 @@ Class.ext(ContentParser.prototype, {
 				  	filesLength: this.filesLength,
 				  	isLastChunk: nextDir.isExist ? false : true
 			};
-
 		$.ajax({
 			type: 'GET',
-			url: 'http:/localhost:911/saveFile',
+			url: 'https://localhost:911/saveFile',
 			data: data,
 			success: function(){				
-				console.log('%cFiles from path: '+ curFilePath +' downloaded!', 'color: #93EC9D; font-size: 13px');
+				console.log('%cFiles from path: "'+ curFilePath +'" were sended to server for downloading!\n-----------------------------------------------------------------------------------', 'color: #93EC9D; font-size: 13px');
 				if(callBack)
 					callBack.call(obj, data.isLastChunk)
 			},
@@ -174,13 +163,6 @@ Class.ext(ContentParser.prototype, {
 				//console.log('%cNodejs server was crashed. Restart the server and try again.', 'color: #F04063; font-size: 13px;');
 			}
 		});
-	},
-	consoleErrorFiles: function(errorData){
-		console.log('Filed to load '+ errorData.length +' files because of network errors:');
-		for (var i=0; i < errorData.length; i++) {
-			console.log((i+1) +') File Name: '+ errorData[i].name +'\n   File Path: '+ errorData[i].path +'\n   File URL: '+ errorData[i].url);
-		};
-		console.log('POSSIBLE SOLUTIONS:\n\t1) Download these files manually;\n\t2) Restart download process.');
 	}
 });
 
