@@ -33,7 +33,7 @@ var options = {
 
 function complete(){
 	if(errorFilesLog.length > 0)
-		consoleErrorFiles(errorData);
+		consoleErrorFiles(errorFilesLog);
 	else
 		console.log('All "'+ downloadedElements +'" files were downloaded successfully!');
 	
@@ -45,7 +45,7 @@ function complete(){
 };
 
 function consoleErrorFiles(errorData){
-	console.log('Filed to load '+ errorData.length +' files because of network errors:');
+	console.log('FILED to load '+ errorData.length +' files because of network errors:');
 	for (var i=0; i < errorData.length; i++) {
 		console.log((i+1) +') File Name: '+ errorData[i].name +'\n   File Path: '+ errorData[i].path +'\n   File URL: '+ errorData[i].url);
 	};
@@ -53,7 +53,6 @@ function consoleErrorFiles(errorData){
 };
 
 function saveFile( options, file ){
-	 
 	https.get(options, function(res){
 	    var fileData = ''
 		res.setEncoding('binary');
@@ -64,28 +63,19 @@ function saveFile( options, file ){
 
 	    res.on('end', function(){
 	        fs.writeFile(boContent + file.path +'/'+ file.name, fileData, 'binary', function(err){
-	            if (err) throw err
+	            if (err) throw err;
 				console.log('File: '+ file.name +' saved!');
 	        	
 	        	downloadedElements += 1;
-	        	
 	        	if(downloadedElements == elementsToDownload)
 		    		complete();       	
 			});
 	    });
 	}).on('error', function(){
-		var port= options.port ? ':'+ options.port : '',
-			url = options.host + port + options.path; 
-
-		errorFilesLog.push[{
-			path: file.path,
-			url:  url, 
-			name: file.name
-		}];
-		downloadedElements += 1;
-
-		if(downloadedElements == elementsToDownload)
-    		complete();
+			errorFilesLog.push(file);
+			downloadedElements += 1;
+			if(downloadedElements == elementsToDownload)
+	    		complete();
 	});
 };
 app.get('/cert', function(req, res){
@@ -124,19 +114,22 @@ app.get('/saveFile', function(req, res){
 
 	if(reqParams.port !== 'false')
 		options.port = reqParams.port;
-
+	
 	for(var i=0; i<reqParams.files.length; i++){
-		var file = {
-			path: reqParams.filesPath,
-			name: reqParams.files[i].name
-		};
 		options.path= reqParams.files[i].path;
 
+		var port= options.port ? ':'+ options.port : '',
+			url = 'https://'+ options.host + port + options.path,
+			file = {
+				path: reqParams.filesPath,
+				name: reqParams.files[i].name,
+				url: url
+			};
 		saveFile(options, file);
-	}
-	res.header('Access-Control-Allow-Origin', req.headers.origin);
-	res.end();		
+	};
 
+	res.header('Access-Control-Allow-Origin', req.headers.origin);
+	res.end();				
 });
 
 app.get('/error404', function(req, res){
