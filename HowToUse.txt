@@ -1,0 +1,21 @@
+HOW TO USE “GSI_BO_saver”:
+
+1) Download archive “GSI_BO_saver.zip”;
+2) Extract files;
+3) Run command line(cmd), and go in to folder “GSI_BO_saver” and run server “app.js”. 
+	Example: if folder locates here - “D:\soft\GSI_BO_saver” , type in cmd:
+		D:							and press button ENTER
+		cd soft\GSI_BO_saver		and press button ENTER
+		node app.js					and press button ENTER(The server will start)
+
+4) In browser (preferred modern browsers like Chrome, Firefox) go to “https://localhost:911/cert” and add certificate. If everything is OK, you will see  on this page “certificate STORED!”. Point “4” has to be made only once. 
+5) Go to page “Content upload” in GSI Back Office;
+6) Open Tab “Console” in Developer tools;
+7) Paste in console and execute code:
+	var script= document.createElement('script');
+	script.src= 'https://localhost:911/clientJS/consoleJS.js';
+	document.getElementsByTagName('head')[0].appendChild(script);
+8) Information about saving files you can see in command line(cmd);
+9) Downloaded files will be in folder “GSI_BO_saver\downloadedData”.
+
+Video example: http://screencast.com/t/atXLtxf2 .
