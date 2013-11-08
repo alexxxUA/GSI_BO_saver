@@ -1,7 +1,8 @@
 ﻿var express		= require('express'),
 	app			= express(),
 	fs 			= require('fs'),
-	mkpath		= require('mkpath')
+	mkpath		= require('mkpath'),
+	mime 		= require('mime'),
 	https = require('https'),
 	http = require('http');
 
@@ -26,7 +27,7 @@ var options = {
         cert: fs.readFileSync(__dirname +'\\certificates\\certificate.pem')
 	},
 	errorFilesLog = [],
-	__dirname = __dirname +'\\downloadedData',
+	boContent = __dirname +'\\downloadedData',
 	elementsToDownload = 0,
 	downloadedElements = 0;
 
@@ -62,7 +63,7 @@ function saveFile( options, file ){
 	    });
 
 	    res.on('end', function(){
-	        fs.writeFile(__dirname + file.path +'/'+ file.name, fileData, 'binary', function(err){
+	        fs.writeFile(boContent + file.path +'/'+ file.name, fileData, 'binary', function(err){
 	            if (err) throw err
 				console.log('File: '+ file.name +' saved!');
 	        	
@@ -92,6 +93,17 @@ app.get('/cert', function(req, res){
 	res.end();
 });
 
+app.get('/mkDir', function(req, res){
+	if(req.query.isLastChunk == 'true')
+		elementsToDownload = req.query.filesLength;
+
+	mkpath.sync(boContent + req.query.dirPath, 0700);
+
+	console.log('Emty dir: '+ req.query.dirPath +' created!');
+	res.header('Access-Control-Allow-Origin', req.headers.origin);
+	res.end();
+});
+
 app.get('/saveFile', function(req, res){
 	var reqParams = req.query,
 		options = {					
@@ -108,7 +120,7 @@ app.get('/saveFile', function(req, res){
 	if(reqParams.isLastChunk == 'true')
 		elementsToDownload = reqParams.filesLength;
 	
-	mkpath.sync(__dirname + reqParams.filesPath, 0700);
+	mkpath.sync(boContent + reqParams.filesPath, 0700);
 
 	if(reqParams.port !== 'false')
 		options.port = reqParams.port;
@@ -125,6 +137,30 @@ app.get('/saveFile', function(req, res){
 	res.header('Access-Control-Allow-Origin', req.headers.origin);
 	res.end();		
 
+});
+
+app.get('/error404', function(req, res){
+	res.end('Error 404.');
+});
+
+app.get('*', function(req, res){
+	var p = __dirname + req.originalUrl;
+	fs.stat(p, function(err, stat){
+		if(!err && !res.getHeader('Content-Type') ){
+
+			var total = stat.size;
+				type = mime.lookup(p),
+				charset = mime.charsets.lookup(type);
+
+			res.writeHead(200, {
+				'Content-Length': total,
+				'Content-Type': type + (charset ? '; charset=' + charset : '')
+			});
+			fs.createReadStream(p).pipe(res);
+		}
+		else
+			res.redirect('/error404');
+    });
 });
 
 https.createServer(options, app).listen(911);

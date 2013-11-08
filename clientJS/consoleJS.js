@@ -63,8 +63,8 @@ Class.ext(ContentParser.prototype, {
 		return /minus/.test(imgSrc) ? true : false;
 	},
 	checkForAllItems: function(){
-		if(this.$dom.find('.pagecursorbtn[value="Next"]'))
-			this.storeDomShowAll( this.$dom.find('[name="FileDeletionForm"]'), this.getVariablesFromDomAndRunAjax );
+		if(this.$dom.find('.pagecursorbtn[value="Next"]').length > 0 )
+			this.storeDomShowAll( this.$dom.find('[name="FileDeletionForm"]'), this.getVariablesFromDomAndRunAjax );			
 		else
 			this.getVariablesFromDomAndRunAjax();
 	},
@@ -81,7 +81,7 @@ Class.ext(ContentParser.prototype, {
 			this.sendDataForSave(path, files, this.startParse )
 		}
 		else
-			this.startParse();
+			this.mkDir( path, this.startParse );
 	},
 	getDomFromLink: function(url, callBack, isExecuted){
 		var obj = this;
@@ -138,6 +138,29 @@ Class.ext(ContentParser.prototype, {
 		});
 		return filesData;
 	},
+	mkDir: function(dirPath, callBack){
+		var obj = this,
+			nextDir = this.getDirParam(this.counter + 1),
+			data = {	
+					dirPath: dirPath,
+				  	filesLength: this.filesLength,
+				  	isLastChunk: nextDir.isExist ? false : true
+			};
+
+		$.ajax({
+			type: 'GET',
+			url: 'https://localhost:911/mkDir',
+			data: data,
+			success: function(){				
+				console.log('%cEmpty dir "'+ data.dirPath +'" created!\n-----------------------------------------------------------------------------------', 'color: #93EC9D; font-size: 13px');
+				if(callBack)
+					callBack.call(obj, data.isLastChunk)
+			},
+			error: function(){
+				console.log('%cNodejs server was crashed. Restart the server and try again.', 'color: #F04063; font-size: 13px;');
+			}
+		});
+	},
 	sendDataForSave: function(curFilePath, filesData, callBack){
 		this.filesLength += filesData.length;
 		var obj = this,
@@ -160,7 +183,7 @@ Class.ext(ContentParser.prototype, {
 					callBack.call(obj, data.isLastChunk)
 			},
 			error: function(){
-				//console.log('%cNodejs server was crashed. Restart the server and try again.', 'color: #F04063; font-size: 13px;');
+				console.log('%cNodejs server was crashed. Restart the server and try again.', 'color: #F04063; font-size: 13px;');
 			}
 		});
 	}
