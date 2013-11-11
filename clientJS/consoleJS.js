@@ -55,7 +55,7 @@ Class.ext(ContentParser.prototype, {
 		};
 	},
 	sendReadyState: function(){
-		console.log('All files were successfully sended to server for downloading!');
+		console.log('All "'+ this.filesLength +'" files were successfully sended to server for downloading!');
 	},
 	isExecuted: function($el){
 		var $treeImg = $el.closest('.treeIconTable').find('.treeIcon img'),

@@ -11,6 +11,7 @@ app.use(express.bodyParser());
 
 //Increase pool size
 https.globalAgent.maxSockets = 100;
+https.globalAgent.options.secureProtocol = 'SSLv3_method';
 
 //Handle errors
 app.use(function (error, req, res, next) {
@@ -35,7 +36,7 @@ function complete(){
 	if(errorFilesLog.length > 0)
 		consoleErrorFiles(errorFilesLog);
 	else
-		console.log('All "'+ downloadedElements +'" files were downloaded successfully!');
+		console.log('All "'+ downloadedElements +'" files were successfully downloaded!');
 	
 	//Resetting variables
 	errorFilesLog = [];
@@ -54,7 +55,8 @@ function consoleErrorFiles(errorData){
 
 function saveFile( options, file ){
 	https.get(options, function(res){
-	    var fileData = ''
+	    var fileData = '';
+
 		res.setEncoding('binary');
 
 		res.on('data', function(chunk){
@@ -64,18 +66,24 @@ function saveFile( options, file ){
 	    res.on('end', function(){
 	        fs.writeFile(boContent + file.path +'/'+ file.name, fileData, 'binary', function(err){
 	            if (err) throw err;
-				console.log('File: '+ file.name +' saved!');
-	        	
+
 	        	downloadedElements += 1;
+
+	            if(elementsToDownload > 0)
+					console.log('('+ downloadedElements +' of '+ elementsToDownload +') File: '+ file.name +' saved!');
+				else
+					console.log('File: '+ file.name +' saved!');
+	        	
 	        	if(downloadedElements == elementsToDownload)
 		    		complete();       	
 			});
 	    });
 	}).on('error', function(){
-			errorFilesLog.push(file);
-			downloadedElements += 1;
-			if(downloadedElements == elementsToDownload)
-	    		complete();
+		console.log('Filed to load file: '+ file.name);
+		errorFilesLog.push(file);
+		downloadedElements += 1;
+		if(downloadedElements == elementsToDownload)
+    		complete();
 	});
 };
 app.get('/cert', function(req, res){
@@ -85,7 +93,7 @@ app.get('/cert', function(req, res){
 
 app.get('/mkDir', function(req, res){
 	if(req.query.isLastChunk == 'true')
-		elementsToDownload = req.query.filesLength;
+		elementsToDownload = parseInt(reqParams.filesLength);
 
 	mkpath.sync(boContent + req.query.dirPath, 0700);
 
@@ -108,13 +116,13 @@ app.get('/saveFile', function(req, res){
 		};
 
 	if(reqParams.isLastChunk == 'true')
-		elementsToDownload = reqParams.filesLength;
+		elementsToDownload = parseInt(reqParams.filesLength);
 	
 	mkpath.sync(boContent + reqParams.filesPath, 0700);
 
 	if(reqParams.port !== 'false')
 		options.port = reqParams.port;
-	
+
 	for(var i=0; i<reqParams.files.length; i++){
 		options.path= reqParams.files[i].path;
 
