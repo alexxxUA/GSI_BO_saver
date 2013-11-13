@@ -18,4 +18,4 @@ HOW TO USE “GSI_BO_saver”:
 8) Information about saving files you can see in command line(cmd);
 9) Downloaded files will be in folder “GSI_BO_saver\downloadedData”.
 
-Video example: http://screencast.com/t/atXLtxf2 .
+Video example: http://screencast.com/t/ertksXdjyZ .
